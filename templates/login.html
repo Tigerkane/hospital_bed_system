@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+
+<div class="auth-page">
+  <div class="auth-card">
+    <h2>Login</h2>
+
+    <form method="post" class="auth-form">
+      {{ form.hidden_tag() }}
+
+      <label for="email">Email</label>
+      {{ form.email(class="auth-input", id="email", placeholder="you@example.com") }}
+
+      <label for="password">Password</label>
+      {{ form.password(class="auth-input", id="password", placeholder="Password") }}
+
+      <div class="auth-actions">
+        {{ form.submit(class="btn-primary") }}
+        <a class="link-secondary" href="{{ url_for('register') }}">Create account</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

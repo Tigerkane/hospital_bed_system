@@ -1,0 +1,97 @@
+/* doctor grid: 3 columns so 6 items -> 2 rows of 3 */
+.doctor-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* three columns */
+  gap: 14px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+/* keep tiles compact and consistent */
+.doctor-tile {
+  width:100%;
+  box-sizing:border-box;
+}
+
+.doctor-tile-inner {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px;
+  border-radius:8px;
+  background:#fff;
+  border:1px solid #eef3f7;
+}
+
+/* FIXED → it must be .doctor-photo-left */
+.doctor-photo-left {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  background:#f1f5f9;
+  display:block;
+  border-radius:6px;
+  border:1px solid #dce3eb;
+}
+
+/* image column */
+.doctor-left { flex:0 0 64px; }
+
+/* text column */
+.doctor-right { flex:1; min-width:0; }
+.doctor-name-small {
+  font-weight:700;
+  font-size:1rem;
+  margin-bottom:3px;
+  color:#0f172a;
+}
+.doctor-spec-small {
+  color:#6b7280;
+  font-size:0.92rem;
+  margin-bottom:6px;
+}
+.doctor-meta {
+  font-size:0.88rem;
+  color:#475569;
+}
+
+/* badge on right */
+.doctor-badge { flex:0 0 auto; margin-left:8px; align-self:center; }
+.status-dot {
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:0.82rem;
+}
+.status-available { background:#10b981; color:#fff; }
+.status-unavailable { background:#ef4444; color:#fff; }
+
+/* selected tile border highlight */
+.doctor-tile-inner.tile-selected {
+  border-color:#3b82f6;
+  box-shadow:0 4px 14px rgba(59,130,246,0.06);
+}
+
+/* Doctor dropdown below grid */
+.confirm-booking-form select#doctor_id,
+.confirm-booking-form select[name="doctor_id"] {
+  margin-top:10px;
+  padding:6px 8px;
+  width: 60%;
+  max-width:520px;
+}
+
+/* Responsive layout for mobiles */
+@media (max-width:900px) {
+  .doctor-tiles-grid {
+    grid-template-columns: 1fr; /* single column */
+  }
+  .doctor-left { flex:0 0 56px; }
+  .doctor-photo-left { width:56px; height:56px; }
+  .confirm-booking-form select#doctor_id,
+  .confirm-booking-form select[name="doctor_id"] {
+    width:100%;
+  }
+}
+
+

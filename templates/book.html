@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/book.css') }}">
+
+<!-- Inline minimum fallback so you see the new boxes immediately (remove later if you prefer external CSS) -->
+<style>
+
+/* quick inline fallback for booking controls */
+.booking-input,
+.booking-select,
+.booking-textarea {
+  width:100%;
+  padding:10px 12px;
+  font-size:0.95rem;
+  border:1px solid #d4dbe3;
+  border-radius:8px;
+  background:#fff;
+  color:#0f172a;
+  box-sizing:border-box;
+  transition: box-shadow .12s, border-color .12s;
+}
+.booking-input:focus,
+.booking-select:focus,
+.booking-textarea:focus {
+  outline:none;
+  border-color:#4a90e2;
+  box-shadow:0 6px 18px rgba(74,144,226,0.12);
+}
+.booking-textarea { min-height:64px; resize:vertical; }
+</style>
+
+<div class="container book-page">
+  <div class="container" style="padding-top:20px; padding-bottom:40px;">
+    <div class="card form-card">
+      <h2 class="form-title">Book a Bed at {{ hospital.name }}</h2>
+
+      <form method="post" class="confirm-booking-form">
+        {{ form.hidden_tag() }}
+
+        <div class="form-row">
+          <label for="name">Patient Name</label>
+          {{ form.name(class="booking-input", id="name", placeholder="Full name") }}
+        </div>
+
+        <div class="form-row">
+          <label for="contact">Contact</label>
+          {{ form.contact(class="booking-input", id="contact", placeholder="Phone or mobile") }}
+        </div>
+
+        <div class="form-row two-col">
+          <div>
+            <label for="bed_type">Bed Type</label>
+            {{ form.bed_type(class="booking-select", id="bed_type") }}
+          </div>
+          <div>
+            <label for="id_proof">ID Proof (number)</label>
+            {{ form.id_proof(class="booking-input small-input", id="id_proof", placeholder="Aadhaar / Govt ID") }}
+          </div>
+        </div>
+
+        <!-- ===== DOCTOR GRID BLOCK (PASTE LOCATION) ===== -->
+        <div class="form-row" style="align-items:flex-start;">
+          <label style="width:160px; margin-top:6px;">Choose a Doctor (optional)</label>
+
+          <div style="flex:1; min-width:0;">
+            <!-- Inline CSS override to ensure immediate 3-column grid -->
+            <style>
+            .doctor-tiles-grid {
+              display: grid !important;
+              grid-template-columns: repeat(3, 1fr) !important;
+              gap: 14px !important;
+              margin-top: 8px !important;
+            }
+            .doctor-tile { width:100% !important; box-sizing:border-box !important; }
+            .doctor-tile-inner {
+              display:flex !important;
+              align-items:center !important;
+              gap:12px !important;
+              padding:10px !important;
+              border-radius:8px !important;
+              background:#fff !important;
+              border:1px solid #eef3f7 !important;
+            }
+            .doctor-left { flex:0 0 64px !important; }
+            .doctor-photo-left { width:64px !important; height:64px !important; object-fit:cover !important; border-radius:6px !important; background:#f8fafc !important; }
+            .doctor-right { flex:1 !important; min-width:0 !important; }
+            .doctor-name-small { font-weight:700 !important; font-size:1rem !important; margin-bottom:3px !important; color:#0f172a !important; }
+            .doctor-spec-small { color:#6b7280 !important; font-size:0.92rem !important; margin-bottom:6px !important; }
+            .doctor-meta { font-size:0.88rem !important; color:#475569 !important; }
+            .doctor-badge { flex:0 0 auto !important; margin-left:8px !important; align-self:center !important; }
+            .status-dot { padding:6px 10px !important; border-radius:999px !important; font-weight:700 !important; font-size:0.82rem !important; }
+            .status-available { background:#10b981 !important; color:#fff !important; }
+            .status-unavailable { background:#ef4444 !important; color:#fff !important; }
+            #doctor-preference-row { margin-top:12px !important; display:flex !important; gap:12px !important; align-items:center !important; }
+            #doctor-preference-row .doctor-select { width:60% !important; max-width:520px !important; }
+            @media (max-width:900px) {
+              .doctor-tiles-grid { grid-template-columns: 1fr !important; }
+              .doctor-photo-left { width:56px !important; height:56px !important; }
+              #doctor-preference-row .doctor-select { width:100% !important; }
+            }
+            </style>
+
+            <div class="doctor-tiles-grid">
+              {% for d in doctors %}
+              <div class="doctor-tile">
+                <div class="doctor-tile-inner" data-docid="{{ d.id }}">
+                  <img
+                    src="{{ url_for('static', filename=d.photo) }}"
+                    onerror="this.src='{{ url_for('static', filename='images/default_doctor.png') }}'"
+                    class="doctor-photo-left"
+                  />
+
+                  <div class="doctor-right">
+                    <div class="doctor-name-small">{{ d.name }}</div>
+                    <div class="doctor-spec-small">{{ d.specialization or 'Doctor' }}</div>
+                    <div class="doctor-meta">{{ d.experience or 0 }} yrs exp • Age {{ d.age or '-' }}</div>
+                  </div>
+
+                  <div class="doctor-badge">
+                    {% if (d.available or 0) > 0 %}
+                      <span class="status-dot status-available">Available</span>
+                    {% else %}
+                      <span class="status-dot status-unavailable">Unavailable</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- dropdown BELOW the grid -->
+            <div id="doctor-preference-row">
+              {{ form.doctor_id(class="doctor-select booking-select", id="doctor_id") }}
+              <span class="doctor-select-help"> Pick a preferred doctor or leave as "No preference".</span>
+            </div>
+          </div>
+        </div>
+        <!-- ===== END DOCTOR GRID BLOCK ===== -->
+
+        <div class="form-row">
+          <label for="symptoms">Symptoms</label>
+          {{ form.symptoms(class="booking-textarea", id="symptoms", placeholder="Short description", rows="3") }}
+        </div>
+
+        <div class="form-actions">
+          {{ form.submit(class="btn btn-primary", value="Confirm Booking") }}
+          <a class="btn btn-link" href="{{ url_for('index') }}">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- small JS: clicking a tile sets the select -->
+<script>
+document.addEventListener('click', function(e){
+  const tile = e.target.closest && e.target.closest('.doctor-tile-inner');
+  if(!tile) return;
+  const id = tile.getAttribute('data-docid');
+  const sel = document.getElementById('doctor_id');
+  if(sel && id){
+    sel.value = id;
+    document.querySelectorAll('.doctor-tile-inner').forEach(n => n.classList.remove('tile-selected'));
+    tile.classList.add('tile-selected');
+  }
+});
+</script>
+
+{% endblock %}

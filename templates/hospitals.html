@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">All Hospitals</h2>
+
+{% for h in hospitals %}
+<div class="card p-3 mb-3">
+  <h4>{{ h.name }}</h4>
+  <p>{{ h.city }} • {{ h.address }}</p>
+
+  <p>
+    ICU: {{ h.icu_available }} |
+    Oxygen: {{ h.oxygen_available }} |
+    Normal: {{ h.normal_available }} |
+    Ventilator: {{ h.ventilator_available }}
+  </p>
+
+  <a class="btn btn-primary" href="{{ url_for('book', hospital_id=h.id) }}">Book Now</a>
+</div>
+{% endfor %}
+
+{% endblock %}

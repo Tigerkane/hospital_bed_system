@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">
+  {% if hospital %}
+    Edit Hospital
+  {% else %}
+    Add New Hospital
+  {% endif %}
+</h2>
+
+<div class="card p-4">
+
+<form method="post">
+  {{ form.hidden_tag() }}
+
+  <div class="mb-3">
+    {{ form.name.label(class="form-label") }}
+    {{ form.name(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
+    {{ form.address.label(class="form-label") }}
+    {{ form.address(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
+    {{ form.city.label(class="form-label") }}
+    {{ form.city(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
+    {{ form.contact.label(class="form-label") }}
+    {{ form.contact(class="form-control") }}
+  </div>
+
+  <h5 class="mt-4">Bed Counts</h5>
+
+  <div class="mb-3">
+    {{ form.icu_total.label(class="form-label") }}
+    {{ form.icu_total(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
+    {{ form.oxygen_total.label(class="form-label") }}
+    {{ form.oxygen_total(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
+    {{ form.normal_total.label(class="form-label") }}
+    {{ form.normal_total(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
+    {{ form.ventilator_total.label(class="form-label") }}
+    {{ form.ventilator_total(class="form-control") }}
+  </div>
+
+  {{ form.submit(class="btn btn-primary") }}
+</form>
+
+</div>
+
+{% endblock %}

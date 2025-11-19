@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+  <h2>Admin Dashboard</h2>
+
+  <div class="card p-3 mb-3">
+    <h4>Bookings Overview</h4>
+    <canvas id="bookingsChart" height="120"></canvas>
+  </div>
+
+  <div class="card p-3 mb-3">
+    <h4>Hospital Summary</h4>
+    <!-- hospital cards -->
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+async function loadAnalytics() {
+    ...
+}
+window.addEventListener('load', loadAnalytics);
+</script>
+
+{% endblock %}

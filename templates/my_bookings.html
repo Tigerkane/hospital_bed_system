@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="padding-top: 20px;">
+
+  <h2>Your Booking History</h2>
+  <p class="text-muted">All your previous and current bed bookings</p>
+
+  {% if bookings %}
+    <table class="table table-bordered" style="margin-top:20px;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Hospital</th>
+          <th>Bed Type</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td>{{ b.id }}</td>
+          <td>{{ b.hospital.name }}</td>
+          <td>{{ b.bed_type|capitalize }}</td>
+          <td>
+            {% if b.status == 'confirmed' %}
+              <span style="color:green;">Confirmed</span>
+            {% elif b.status == 'pending' %}
+              <span style="color:orange;">Pending</span>
+            {% elif b.status == 'cancelled' %}
+              <span style="color:red;">Cancelled</span>
+            {% else %}
+              <span style="color:blue;">Discharged</span>
+            {% endif %}
+          </td>
+          <td>{{ b.created_at.strftime('%d-%m-%Y %I:%M %p') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% else %}
+    <p>You have no bookings yet.</p>
+  {% endif %}
+
+</div>
+{% endblock %}

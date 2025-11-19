@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/book.css') }}">
+
+<style>
+/* Doctor card row */
+.doctor-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid #eef3f7;
+  padding: 14px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.03);
+  margin-bottom: 14px;
+}
+
+/* FIXED → Photo size stays perfect */
+.doctor-detail-photo {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #dce3eb;
+  display: block;
+}
+
+/* Doctor right side info section */
+.doctor-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doctor-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin: 0;
+  color: #0f172a;
+}
+
+.doctor-spec {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.doctor-meta {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.doctor-badge {
+  margin-left: 12px;
+  flex: 0 0 auto;
+}
+
+.status-dot {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.status-available {
+  background: #10b981;
+  color: #fff;
+}
+
+.status-unavailable {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 780px) {
+  .doctor-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .doctor-detail-photo {
+    width: 140px;
+    height: 140px;
+  }
+}
+</style>
+
+<h2 class="mb-4">{{ hospital.name }} – Bed Availability</h2>
+
+<div class="card p-4">
+  <p><strong>ICU Beds:</strong> {{ hospital.icu_available }} / {{ hospital.icu_total }}</p>
+  <p><strong>Oxygen Beds:</strong> {{ hospital.oxygen_available }} / {{ hospital.oxygen_total }}</p>
+  <p><strong>Normal Beds:</strong> {{ hospital.normal_available }} / {{ hospital.normal_total }}</p>
+  <p><strong>Ventilator Beds:</strong> {{ hospital.ventilator_available }} / {{ hospital.ventilator_total }}</p>
+
+  <a class="btn btn-primary mt-3" href="{{ url_for('book', hospital_id=hospital.id) }}">
+    Book Now
+  </a>
+</div>
+
+<br>
+
+<h3>Doctors Available</h3>
+
+<div class="doctors-list">
+  {% for d in hospital.doctors %}
+    <div class="doctor-card">
+
+      <!-- PHOTO (left) -->
+      <img
+        src="{{ url_for('static', filename=d.photo) }}"
+        onerror="this.src='{{ url_for('static', filename='images/default_doctor.png') }}'"
+        class="doctor-detail-photo"
+        alt="Doctor photo"
+      />
+
+      <!-- DETAILS (right) -->
+      <div class="doctor-info">
+        <p class="doctor-name">{{ d.name }}</p>
+        <p class="doctor-spec">{{ d.specialization or 'Doctor' }}</p>
+        <p class="doctor-meta">{{ d.experience or 0 }} yrs exp • Age {{ d.age or '-' }}</p>
+      </div>
+
+      <!-- BADGE -->
+      <div class="doctor-badge">
+        {% if (d.available or 0) > 0 %}
+          <span class="status-dot status-available">Available</span>
+        {% else %}
+          <span class="status-dot status-unavailable">Unavailable</span>
+        {% endif %}
+      </div>
+
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hospital Bed & Doctor Booking System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- main stylesheet (must exist at static/css/style.css) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <nav class="navbar-custom">
+    <div class="container nav-row">
+      <div class="nav-left">
+        <a href="{{ url_for('index') }}" class="nav-brand">Home</a>
+      </div>
+
+      <div class="nav-right">
+        {% if current_user.is_authenticated %}
+          <!-- show role-specific link, then My Bookings and Logout -->
+          {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-link">Admin</a>
+          {% elif current_user.role == 'hospital' %}
+            <a href="{{ url_for('create_hospital') }}" class="nav-link">Hospital Dashboard</a>
+          {% endif %}
+
+          <a href="{{ url_for('my_bookings') }}" class="nav-link">My Bookings</a>
+          <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+          <a href="{{ url_for('register') }}" class="nav-link">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div>Built with care • Hospital Bed & Doctor Booking System</div>
+      <div class="project-by">Project by: <strong>Shreyas,Satyajit Das</strong></div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
