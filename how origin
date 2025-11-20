@@ -1,0 +1,5 @@
+[33m16237d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Resolve merge conflict in app.py using fixed version
+[33m2660f1d[m Make DB configurable (DATABASE_URL) and fallback to sqlite
+[33mf1ba576[m Refactor database configuration for flexibility
+[33m9096288[m Pin gunicorn in requirements
+[33m05f2dae[m Add gunicorn to requirements
