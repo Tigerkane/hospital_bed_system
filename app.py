@@ -1,8 +1,8 @@
-# app.py (fixed)
+# app.py (fixed, ready for Render)
 import os
 from dotenv import load_dotenv
 
-# load .env from project root for local development
+# load .env for local development only; Render ignores .env
 load_dotenv()
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
@@ -18,27 +18,26 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-this')
 
 # Primary: read DATABASE_URL environment variable (production)
-# Fallback behavior: if you explicitly set USE_LOCAL_MYSQL=1 (for local dev),
-# build a mysql URL from DB_* vars. Otherwise, use a local sqlite file.
+# Fallback behavior: if USE_LOCAL_MYSQL=1, build mysql URL from DB_* vars (local dev)
+# Otherwise fallback to local sqlite file (safe on Render)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 USE_LOCAL_MYSQL = os.environ.get('USE_LOCAL_MYSQL', '0') == '1'
 
 if not DATABASE_URL and USE_LOCAL_MYSQL:
-    # build MySQL connection string from DB_* variables (useful for local dev)
     DB_USER = os.environ.get('DB_USER', 'root')
     DB_PASS = os.environ.get('DB_PASS', '')
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_NAME = os.environ.get('DB_NAME', 'covid_beds')
-    # note: using mysql+mysqlconnector dialect
+    # Use mysql+mysqlconnector dialect if using mysql-connector-python
     DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
-# final fallback: sqlite file in project root (safe on Render and for quick testing)
+# Final fallback: sqlite file in project root
 if not DATABASE_URL:
     DATABASE_URL = 'sqlite:///local_dev.db'
 
 # Configure SQLAlchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-# Use pool_pre_ping to avoid stale connection errors on some hosts
+# avoid stale connection errors on some hosts
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -77,7 +76,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     phone = db.Column(db.String(30))
     password = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.Enum('patient','hospital','admin'), default='patient')
+    role = db.Column(db.Enum('patient', 'hospital', 'admin'), default='patient')
     hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'), nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
@@ -104,8 +103,8 @@ class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     hospital_id = db.Column(db.Integer, db.ForeignKey('hospitals.id'))
-    bed_type = db.Column(db.Enum('icu','oxygen','normal','ventilator'))
-    status = db.Column(db.Enum('pending','confirmed','cancelled','discharged'), default='pending')
+    bed_type = db.Column(db.Enum('icu', 'oxygen', 'normal', 'ventilator'))
+    status = db.Column(db.Enum('pending', 'confirmed', 'cancelled', 'discharged'), default='pending')
     name = db.Column(db.String(150))
     contact = db.Column(db.String(50))
     symptoms = db.Column(db.Text)
@@ -120,7 +119,7 @@ class Waitlist(db.Model):
     __tablename__ = 'waitlist'
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    bed_type = db.Column(db.Enum('icu','oxygen','normal','ventilator'))
+    bed_type = db.Column(db.Enum('icu', 'oxygen', 'normal', 'ventilator'))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     patient = db.relationship('User', foreign_keys=[patient_id])
@@ -132,13 +131,15 @@ class RegisterForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     phone = StringField('Phone')
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
-    role = SelectField('Role', choices=[('patient','Patient'),('hospital','Hospital'),('admin','Admin')])
+    role = SelectField('Role', choices=[('patient', 'Patient'), ('hospital', 'Hospital'), ('admin', 'Admin')])
     submit = SubmitField('Register')
+
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
+
 
 class HospitalForm(FlaskForm):
     name = StringField('Hospital Name', validators=[DataRequired()])
@@ -151,11 +152,12 @@ class HospitalForm(FlaskForm):
     ventilator_total = IntegerField('Ventilator beds', default=0)
     submit = SubmitField('Save')
 
+
 class BookingForm(FlaskForm):
     name = StringField('Patient Name', validators=[DataRequired()])
     contact = StringField('Contact', validators=[DataRequired()])
     bed_type = SelectField('Bed Type', choices=[
-        ('icu','ICU'),('oxygen','Oxygen'),('normal','Normal'),('ventilator','Ventilator')
+        ('icu', 'ICU'), ('oxygen', 'Oxygen'), ('normal', 'Normal'), ('ventilator', 'Ventilator')
     ])
     doctor_id = SelectField('Doctor (optional)', coerce=int, choices=[], validate_choice=False)
     symptoms = TextAreaField('Symptoms')
@@ -172,18 +174,29 @@ def load_user(user_id):
         return None
 
 
+# --- HEALTH CHECK (safe, does not touch DB) ---
+@app.route("/ping")
+def ping():
+    return jsonify({"status": "ok", "app": "hospital_bed_system"}), 200
+
+
 # --- ROUTES ---
 @app.route('/')
 def index():
-    city = request.args.get('city')
-    query = Hospital.query
-    if city:
-        query = query.filter(Hospital.city.ilike(f"%{city}%"))
-    hospitals = query.all()
-    return render_template('index.html', hospitals=hospitals)
+    try:
+        city = request.args.get('city')
+        query = Hospital.query
+        if city:
+            query = query.filter(Hospital.city.ilike(f"%{city}%"))
+        hospitals = query.all()
+        return render_template('index.html', hospitals=hospitals)
+    except Exception as e:
+        # Log the exception to stderr (visible in Render logs) then return a generic 500 page
+        app.logger.exception("Error in index route")
+        return render_template('500.html'), 500
 
 
-@app.route('/register', methods=['GET','POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
@@ -192,7 +205,8 @@ def register():
             flash('Email already registered', 'warning')
             return redirect(url_for('register'))
         hashed = generate_password_hash(form.password.data)
-        user = User(name=form.name.data, email=form.email.data, phone=form.phone.data, password=hashed, role=form.role.data)
+        user = User(name=form.name.data, email=form.email.data, phone=form.phone.data, password=hashed,
+                    role=form.role.data)
         db.session.add(user)
         db.session.commit()
         flash('Registration successful. Please login.', 'success')
@@ -200,7 +214,7 @@ def register():
     return render_template('register.html', form=form)
 
 
-@app.route('/login', methods=['GET','POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -224,10 +238,10 @@ def logout():
 # ------------------------
 # HOSPITAL ROUTES
 # ------------------------
-@app.route('/hospital/create', methods=['GET','POST'])
+@app.route('/hospital/create', methods=['GET', 'POST'])
 @login_required
 def create_hospital():
-    if current_user.role not in ['hospital','admin']:
+    if current_user.role not in ['hospital', 'admin']:
         flash('Unauthorized', 'danger')
         return redirect(url_for('index'))
     form = HospitalForm()
@@ -259,7 +273,7 @@ def create_hospital():
     return render_template('hospital_dashboard.html', form=form)
 
 
-@app.route('/hospital/<int:id>/edit', methods=['GET','POST'])
+@app.route('/hospital/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_hospital(id):
     h = Hospital.query.get_or_404(id)
@@ -270,8 +284,6 @@ def edit_hospital(id):
     form = HospitalForm(obj=h)
 
     if form.validate_on_submit():
-
-        # update availabilities correctly
         delta_icu = (form.icu_total.data or 0) - (h.icu_total or 0)
         h.icu_total = form.icu_total.data or 0
         h.icu_available = max(0, (h.icu_available or 0) + delta_icu)
@@ -288,7 +300,6 @@ def edit_hospital(id):
         h.ventilator_total = form.ventilator_total.data or 0
         h.ventilator_available = max(0, (h.ventilator_available or 0) + delta_vent)
 
-        # update details
         h.name = form.name.data
         h.address = form.address.data
         h.city = form.city.data
@@ -315,8 +326,9 @@ def hospital_beds(id):
     h = Hospital.query.get_or_404(id)
     return render_template('hospital_beds.html', hospital=h)
 
+
 # -------------------------------------------------------------------
-# NEW API ROUTE FOR REALTIME BED AVAILABILITY (your request)
+# NEW API ROUTE FOR REALTIME BED AVAILABILITY
 # -------------------------------------------------------------------
 @app.route('/api/hospital/<int:id>/availability')
 def api_availability(id):
@@ -337,7 +349,7 @@ def api_availability(id):
 # ------------------------
 # BOOKING ROUTES
 # ------------------------
-@app.route('/book/<int:hospital_id>', methods=['GET','POST'])
+@app.route('/book/<int:hospital_id>', methods=['GET', 'POST'])
 @login_required
 def book(hospital_id):
     h = Hospital.query.get_or_404(hospital_id)
@@ -418,12 +430,12 @@ def my_bookings():
     return render_template('my_bookings.html', bookings=bookings)
 
 
-# --- START SERVER ---
+# --- START SERVER (local only) ---
 if __name__ == '__main__':
     # create local DB tables when running the script locally
     with app.app_context():
         db.create_all()
 
-    # respect PORT env var when running locally; in production Render uses gunicorn
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
