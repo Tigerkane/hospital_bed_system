@@ -1,8 +1,9 @@
-# app.py
+# app.py (fixed)
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # load .env from project root
+# load .env from project root for local development
+load_dotenv()
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -16,15 +17,32 @@ from wtforms.validators import DataRequired, Email, Length
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-this')
 
-DB_USER = os.environ.get('DB_USER', 'root')
-DB_PASS = os.environ.get('DB_PASS', '')
-DB_HOST = os.environ.get('DB_HOST', 'localhost')
-DB_NAME = os.environ.get('DB_NAME', 'covid_beds')
+# Primary: read DATABASE_URL environment variable (production)
+# Fallback behavior: if you explicitly set USE_LOCAL_MYSQL=1 (for local dev),
+# build a mysql URL from DB_* vars. Otherwise, use a local sqlite file.
+DATABASE_URL = os.environ.get('DATABASE_URL')
+USE_LOCAL_MYSQL = os.environ.get('USE_LOCAL_MYSQL', '0') == '1'
 
-# Build SQLAlchemy Database URI
-app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+if not DATABASE_URL and USE_LOCAL_MYSQL:
+    # build MySQL connection string from DB_* variables (useful for local dev)
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASS = os.environ.get('DB_PASS', '')
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_NAME = os.environ.get('DB_NAME', 'covid_beds')
+    # note: using mysql+mysqlconnector dialect
+    DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+
+# final fallback: sqlite file in project root (safe on Render and for quick testing)
+if not DATABASE_URL:
+    DATABASE_URL = 'sqlite:///local_dev.db'
+
+# Configure SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+# Use pool_pre_ping to avoid stale connection errors on some hosts
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Initialize extensions
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -402,7 +420,11 @@ def my_bookings():
 
 # --- START SERVER ---
 if __name__ == '__main__':
+    # create local DB tables when running the script locally
     with app.app_context():
         db.create_all()
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # respect PORT env var when running locally; in production Render uses gunicorn
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
+
