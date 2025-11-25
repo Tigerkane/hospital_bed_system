@@ -4,7 +4,17 @@
 <h2 class="mb-4">All Hospitals</h2>
 
 {% for h in hospitals %}
-<div class="card p-3 mb-3">
+<div class="card p-3 mb-3 hospital-card"
+     data-id="{{ h.id }}"
+     data-name="{{ h.name }}"
+     data-city="{{ h.city or '' }}"
+     data-contact="{{ h.contact or '' }}"
+     data-icu="{{ h.icu_available or 0 }}"
+     data-oxygen="{{ h.oxygen_available or 0 }}"
+     data-normal="{{ h.normal_available or 0 }}"
+     data-vent="{{ h.ventilator_available or 0 }}"
+     data-link="{{ url_for('hospital_beds', id=h.id, _external=True) }}">
+
   <h4>{{ h.name }}</h4>
   <p>{{ h.city }} • {{ h.address }}</p>
 
@@ -16,7 +26,48 @@
   </p>
 
   <a class="btn btn-primary" href="{{ url_for('book', hospital_id=h.id) }}">Book Now</a>
+
+  <!-- WhatsApp Share Button -->
+  <button class="btn btn-success mt-2" onclick="shareHospitalWhatsapp(this)">
+    Share on WhatsApp
+  </button>
+
 </div>
 {% endfor %}
+
+<!-- WhatsApp Sharing Script -->
+<script>
+function buildHospitalMessage(data) {
+  return (
+    `${data.name}\n` +
+    `${data.city ? data.city + " • " : ""}Beds available: ` +
+    `ICU ${data.icu}, Oxygen ${data.oxygen}, Normal ${data.normal}, Ventilator ${data.vent}\n` +
+    (data.contact ? `Contact: ${data.contact}\n` : "") +
+    `Details: ${data.link}\n\n` +
+    `Shared via Hospital Bed & Doctor Booking System`
+  );
+}
+
+function shareHospitalWhatsapp(btn) {
+  const card = btn.closest('.hospital-card');
+
+  const data = {
+    id: card.dataset.id,
+    name: card.dataset.name,
+    city: card.dataset.city,
+    contact: card.dataset.contact,
+    icu: card.dataset.icu,
+    oxygen: card.dataset.oxygen,
+    normal: card.dataset.normal,
+    vent: card.dataset.vent,
+    link: card.dataset.link,
+  };
+
+  const msg = encodeURIComponent(buildHospitalMessage(data));
+  const url = `https://wa.me/?text=${msg}`;
+
+  window.open(url, "_blank");
+}
+</script>
 
 {% endblock %}

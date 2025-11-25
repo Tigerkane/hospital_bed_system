@@ -26,7 +26,7 @@ if not DATABASE_URL and USE_LOCAL_MYSQL:
     DB_USER = os.environ.get("DB_USER", "root")
     DB_PASS = os.environ.get("DB_PASS", "")
     DB_HOST = os.environ.get("DB_HOST", "localhost")
-    DB_NAME = os.environ.get("DB_NAME", "covid_beds")
+    DB_NAME = os.environ.get("DB_NAME", "hospital_beds")
     DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
 if not DATABASE_URL:
